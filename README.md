@@ -1,0 +1,2 @@
+# aiag
+AI Article Generator
