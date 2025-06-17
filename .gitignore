@@ -1,0 +1,17 @@
+# WordPress specific ignores (if any are inside the plugin, though unlikely for a simple plugin)
+*.log
+*.sql
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+vendor/          # If you use Composer for dependencies
+node_modules/    # If you use npm/yarn for frontend assets
+
+# Local by Flywheel specific (if ever initialized in site root, but good to know)
+.lando/
+.lightning/
+.local-temp/
+.backup/
+# If your debug.log somehow ends up in your plugin folder, ignore it
+debug.log
