@@ -5,6 +5,7 @@ Description: Версия 2.3 плагина с добавлением AJAX-ге
 а также поддержкой Google Gemini API, с улучшенным логированием ошибок.
 Version: 2.4
 Author: th7
+Git: https://github.com/th777/aiag/
 */
 
 // Убедимся, что WordPress загружен
