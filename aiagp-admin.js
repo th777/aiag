@@ -1,5 +1,5 @@
 jQuery(function($){
-    // Функция для отображения сообщений пользователю
+    // Function to display messages to the user
     function showMessage(msg, type = 'error') {
         const messagesDiv = $('#aiagp_messages');
         messagesDiv.removeClass('notice notice-success notice-error').addClass('notice is-dismissible');
@@ -9,26 +9,26 @@ jQuery(function($){
             messagesDiv.addClass('notice-error').html('<p><strong>' + msg + '</strong></p>');
         }
         messagesDiv.show();
-        // Скрыть сообщение через 8 секунд
+        // Hide message after 8 seconds
         setTimeout(() => messagesDiv.fadeOut(500), 8000);
     }
 
-    // Общая функция для выполнения AJAX-запросов генерации
+    // Generic function for making AJAX generation requests
     function ajaxGenerate(button, loaderSpan, ajaxData, successCallback) {
         button.prop('disabled', true).css('opacity', '0.7');
         loaderSpan.show();
-        $('#aiagp_messages').hide(); // Скрыть предыдущие сообщения
+        $('#aiagp_messages').hide(); // Hide previous messages
 
         $.post(aiagp_ajax.ajax_url, ajaxData, function(response){
             if(response.success){
                 successCallback(response.data);
                 showMessage(aiagp_ajax.messages.success_generation, 'success');
             } else {
-                showMessage(response.data); // PHP уже возвращает локализованное сообщение об ошибке
+                showMessage(response.data); // PHP already returns the localized error message
             }
             loaderSpan.hide();
             button.prop('disabled', false).css('opacity', '1');
-            updateArticleButtonState(); // Обновить состояние кнопки "Сгенерировать статью"
+            updateArticleButtonState(); // Update the state of the "Generate Article" button
         }).fail(function(jqXHR, textStatus, errorThrown) {
             let errorMessage = aiagp_ajax.messages.ajax_error + ' ' + textStatus;
             if (errorThrown) {
@@ -38,10 +38,10 @@ jQuery(function($){
                 try {
                     const errorResponse = JSON.parse(jqXHR.responseText);
                     if (errorResponse.data) {
-                        errorMessage = errorResponse.data; // Используем сообщение об ошибке из PHP
+                        errorMessage = errorResponse.data; // Use the error message from PHP
                     }
                 } catch (e) {
-                    // Если ответ не JSON, используем как есть
+                    // If response is not JSON, use as is
                     errorMessage += ' - ' + jqXHR.responseText;
                 }
             }
@@ -52,7 +52,7 @@ jQuery(function($){
         });
     }
 
-    // Обновление состояния кнопки "Сгенерировать статью"
+    // Update the state of the "Generate Article" button
     function updateArticleButtonState() {
         const title = $('#ai_title_input').val().trim();
         const sections = $('#sections_text_area').val().trim();
@@ -65,12 +65,12 @@ jQuery(function($){
         }
     }
 
-    // Обработчики событий DOMContentLoaded или jQuery(document).ready
+    // DOMContentLoaded or jQuery(document).ready handlers
     $(document).ready(function() {
-        updateArticleButtonState(); // Вызов при загрузке страницы
-        $('#ai_title_input, #sections_text_area').on('input', updateArticleButtonState); // Вызов при изменении полей
+        updateArticleButtonState(); // Call on page load
+        $('#ai_title_input, #sections_text_area').on('input', updateArticleButtonState); // Call when fields change
 
-        // Переключатели видимости API ключей
+        // API key visibility toggles
         $('#toggle_openai_key').on('change', function() {
             var input = $('#openai_api_key');
             input.attr('type', this.checked ? 'text' : 'password');
@@ -80,7 +80,7 @@ jQuery(function($){
             input.attr('type', this.checked ? 'text' : 'password');
         });
 
-        // Обработчик кнопки "Сгенерировать заголовок"
+        // "Generate Title" button handler
         $('#generate_title_btn').on('click', function(){
             ajaxGenerate(
                 $(this),
@@ -101,7 +101,7 @@ jQuery(function($){
             );
         });
 
-        // Обработчик кнопки "Сгенерировать разделы"
+        // "Generate Sections" button handler
         $('#generate_sections_btn').on('click', function(){
             ajaxGenerate(
                 $(this),
@@ -123,7 +123,7 @@ jQuery(function($){
             );
         });
 
-        // Обработчик кнопки "Сгенерировать статью"
+        // "Generate Article" button handler
         $('#generate_article_btn').on('click', function(){
             ajaxGenerate(
                 $(this),
