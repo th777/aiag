@@ -6,6 +6,8 @@ Description: Версия 2.3 плагина с добавлением AJAX-ге
 Version: 2.4
 Author: th7
 Git: https://github.com/th777/aiag/
+Text Domain: ai-generator-pro
+Domain Path: /languages
 */
 
 // Убедимся, что WordPress загружен
@@ -15,22 +17,32 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * ========================================
+ * Загрузка текстового домена для многоязычности
+ * ========================================
+ */
+function aiagp_load_textdomain() {
+    load_plugin_textdomain( 'ai-generator-pro', false, dirname( plugin_basename( __FILE__ ) ) . '/languages/' );
+}
+add_action( 'plugins_loaded', 'aiagp_load_textdomain' );
+
+/**
+ * ========================================
  * Вспомогательные функции для дефолтных промптов
  * ========================================
  */
 function aiagp_get_default_prompts() {
     return [
         'title' => [
-            'UA Заголовок' => 'Сгенеруй унікальний головний заголовок (H1) для статті на тему {{topic}} мовою {{language}}. Враховуй тон: {{tone}}, стиль: {{style}} та бажану довжину: не більше 80 символів.',
-            'EN Title' => 'Generate a unique H1 headline for an article about {{topic}} in {{language}}. Tone: {{tone}}, Style: {{style}}, Length: {{length}}. Title should be catchy, relevant and no more than 80 characters.'
+            'UA Заголовок' => __('Generate a unique H1 headline for an article about {{topic}} in {{language}}. Tone: {{tone}}, Style: {{style}}, Length: {{length}}. Title should be catchy, relevant and no more than 80 characters.', 'ai-generator-pro'),
+            'EN Title' => __('Generate a unique H1 headline for an article about {{topic}} in {{language}}. Tone: {{tone}}, Style: {{style}}, Length: {{length}}. Title should be catchy, relevant and no more than 80 characters.', 'ai-generator-pro')
         ],
         'section' => [
-            'UA Розділи' => 'Сформуй список із {{num_sections}} заголовків розділів для статті на тему {{topic}} українською мовою. Враховуй тон: {{tone}}, стиль: {{style}}, обсяг: {{length}} символів, заголовок: {{title}}.',
-            'EN Sections' => 'Generate a list of {{num_sections}} relevant section titles for an article about {{topic}} in {{language}}. Tone: {{tone}}, Style: {{style}}, Title: {{title}}, Length: {{length}} characters. Only section titles, one per line, nothing else.'
+            'UA Розділи' => __('Generate a list of {{num_sections}} relevant section titles for an article about {{topic}} in {{language}}. Tone: {{tone}}, Style: {{style}}, Length: {{length}} characters, Title: {{title}}.', 'ai-generator-pro'),
+            'EN Sections' => __('Generate a list of {{num_sections}} relevant section titles for an article about {{topic}} in {{language}}. Tone: {{tone}}, Style: {{style}}, Title: {{title}}, Length: {{length}} characters. Only section titles, one per line, nothing else.', 'ai-generator-pro')
         ],
         'main' => [
-            'UA Статья' => 'Напиши статтю на тему {{topic}} українською мовою. Заголовок: {{title}}. Структуруй по розділам: {{sections}}. Тон: {{tone}}, стиль: {{style}}. Довжина: {{length}} символів.',
-            'EN Article' => 'Write a detailed article about {{topic}} in {{language}}. Title: {{title}}. Use these sections: {{sections}}. Tone: {{tone}}, Style: {{style}}. Length: {{length}} characters.'
+            'UA Статья' => __('Write a detailed article about {{topic}} in {{language}}. Title: {{title}}. Use these sections: {{sections}}. Tone: {{tone}}, Style: {{style}}. Length: {{length}} characters.', 'ai-generator-pro'),
+            'EN Article' => __('Write a detailed article about {{topic}} in {{language}}. Title: {{title}}. Use these sections: {{sections}}. Tone: {{tone}}, Style: {{style}}. Length: {{length}} characters.', 'ai-generator-pro')
         ]
     ];
 }
@@ -39,8 +51,8 @@ function aiagp_get_default_prompts() {
 add_action('admin_menu', 'aiagp_menu');
 function aiagp_menu() {
     add_menu_page(
-        'AI Article Generator',
-        'AI статьи',
+        __('AI Article Generator', 'ai-generator-pro'),
+        __('AI Articles', 'ai-generator-pro'),
         'manage_options',
         'ai-article-generator',
         'aiagp_page',
@@ -94,7 +106,28 @@ function aiagp_enqueue_scripts($hook) {
     wp_enqueue_script('aiagp-admin-js', plugin_dir_url(__FILE__) . 'aiagp-admin.js', ['jquery'], null, true);
     wp_localize_script('aiagp-admin-js', 'aiagp_ajax', [
         'ajax_url' => admin_url('admin-ajax.php'),
-        'nonce' => wp_create_nonce('aiagp_nonce')
+        'nonce' => wp_create_nonce('aiagp_nonce'),
+        // Локализованные строки для JS
+        'messages' => [
+            'success_generation' => __('Генерация завершена успешно!', 'ai-generator-pro'),
+            'ajax_error' => __('AJAX Ошибка:', 'ai-generator-pro'),
+            'api_error_openai' => __('Ошибка OpenAI (HTTP %d): %s', 'ai-generator-pro'),
+            'api_error_gemini' => __('Ошибка Gemini (HTTP %d): %s', 'ai-generator-pro'),
+            'no_rights' => __('У вас нет прав для выполнения этой операции.', 'ai-generator-pro'),
+            'no_title_sections' => __('Заголовок и разделы обязательны', 'ai-generator-pro'),
+            'error_saving_article_no_content' => __('Ошибка: Для сохранения статьи как черновика необходим заголовок и контент.', 'ai-generator-pro'),
+            'error_saving_article_wp_error' => __('Ошибка при сохранении:', 'ai-generator-pro'),
+            'article_saved' => __('Статья сохранена как черновик!', 'ai-generator-pro'),
+            'edit_draft' => __('Редактировать черновик', 'ai-generator-pro'),
+            'api_key_not_set_openai' => __('Ошибка: OpenAI API ключ не установлен.', 'ai-generator-pro'),
+            'api_key_not_set_gemini' => __('Ошибка: Google Gemini API ключ не установлен.', 'ai-generator-pro'),
+            'rate_limit_exceeded_openai' => __('Превышен лимит использования OpenAI API. Пожалуйста, проверьте свой тарифный план и платежные данные на платформе OpenAI.', 'ai-generator-pro'),
+            'user_location_not_supported_gemini' => __('Ваше текущее местоположение не поддерживается для использования Google Gemini API. Пожалуйста, попробуйте воспользоваться VPN или другим хостингом.', 'ai-generator-pro'),
+            'unknown_error_api' => __('Неизвестная ошибка API.', 'ai-generator-pro'),
+            'no_expected_result_openai' => __('Ошибка OpenAI: не получен ожидаемый результат. Пожалуйста, попробуйте еще раз.', 'ai-generator-pro'),
+            'no_expected_result_gemini' => __('Ошибка Gemini: не получен ожидаемый результат. Пожалуйста, попробуйте еще раз.', 'ai-generator-pro'),
+            'api_connection_error' => __('Пожалуйста, проверьте ваше интернет-соединение или настройки сервера.', 'ai-generator-pro'),
+        ]
     ]);
 }
 
@@ -107,12 +140,12 @@ function aiagp_enqueue_scripts($hook) {
 function aiagp_call_ai($provider, $prompt, $max_tokens, $api_keys) {
     if ($provider === 'gemini') {
         if (empty($api_keys['gemini'])) {
-            throw new Exception('Ошибка: Google Gemini API ключ не установлен.');
+            throw new Exception(aiagp_ajax['messages']['api_key_not_set_gemini'] ?? 'Ошибка: Google Gemini API ключ не установлен.'); // Использовать локализованную строку
         }
         return aiagp_gemini($prompt, $api_keys['gemini'], $max_tokens);
     } else { // 'openai' по умолчанию
         if (empty($api_keys['openai'])) {
-            throw new Exception('Ошибка: OpenAI API ключ не установлен.');
+            throw new Exception(aiagp_ajax['messages']['api_key_not_set_openai'] ?? 'Ошибка: OpenAI API ключ не установлен.'); // Использовать локализованную строку
         }
         return aiagp_gpt($prompt, $api_keys['openai'], $max_tokens);
     }
@@ -122,7 +155,7 @@ function aiagp_call_ai($provider, $prompt, $max_tokens, $api_keys) {
 add_action('wp_ajax_aiagp_generate_title', 'aiagp_ajax_generate_title');
 function aiagp_ajax_generate_title() {
     check_ajax_referer('aiagp_nonce', 'security');
-    if (!current_user_can('manage_options')) wp_send_json_error('Нет прав');
+    if (!current_user_can('manage_options')) wp_send_json_error(__( 'У вас нет прав для выполнения этой операции.', 'ai-generator-pro' ));
 
     $topic = sanitize_text_field($_POST['topic'] ?? '');
     $language = sanitize_text_field($_POST['language'] ?? 'українська');
@@ -134,8 +167,8 @@ function aiagp_ajax_generate_title() {
     $ai_provider = sanitize_text_field($_POST['ai_provider'] ?? 'openai');
 
     if (!$title_prompt) {
-        $default_prompts = aiagp_get_default_prompts(); //
-        $title_prompt = array_values($default_prompts['title'])[0]; //
+        $default_prompts = aiagp_get_default_prompts();
+        $title_prompt = array_values($default_prompts['title'])[0];
     }
 
     $replace = [
@@ -162,7 +195,7 @@ function aiagp_ajax_generate_title() {
 add_action('wp_ajax_aiagp_generate_sections', 'aiagp_ajax_generate_sections');
 function aiagp_ajax_generate_sections() {
     check_ajax_referer('aiagp_nonce', 'security');
-    if (!current_user_can('manage_options')) wp_send_json_error('Нет прав');
+    if (!current_user_can('manage_options')) wp_send_json_error(__( 'У вас нет прав для выполнения этой операции.', 'ai-generator-pro' ));
 
     $topic = sanitize_text_field($_POST['topic'] ?? '');
     $language = sanitize_text_field($_POST['language'] ?? 'українська');
@@ -175,8 +208,8 @@ function aiagp_ajax_generate_sections() {
     $ai_provider = sanitize_text_field($_POST['ai_provider'] ?? 'openai');
 
     if (!$section_prompt) {
-        $default_prompts = aiagp_get_default_prompts(); //
-        $section_prompt = array_values($default_prompts['section'])[0]; //
+        $default_prompts = aiagp_get_default_prompts();
+        $section_prompt = array_values($default_prompts['section'])[0];
     }
 
     $replace = [
@@ -204,7 +237,7 @@ function aiagp_ajax_generate_sections() {
 add_action('wp_ajax_aiagp_generate_article', 'aiagp_ajax_generate_article');
 function aiagp_ajax_generate_article() {
     check_ajax_referer('aiagp_nonce', 'security');
-    if (!current_user_can('manage_options')) wp_send_json_error('Нет прав');
+    if (!current_user_can('manage_options')) wp_send_json_error(__( 'У вас нет прав для выполнения этой операции.', 'ai-generator-pro' ));
 
     $topic = sanitize_text_field($_POST['topic'] ?? '');
     $language = sanitize_text_field($_POST['language'] ?? 'українська');
@@ -218,11 +251,11 @@ function aiagp_ajax_generate_article() {
     $ai_provider = sanitize_text_field($_POST['ai_provider'] ?? 'openai');
 
     if (!$main_prompt) {
-        $default_prompts = aiagp_get_default_prompts(); //
-        $main_prompt = array_values($default_prompts['main'])[0]; //
+        $default_prompts = aiagp_get_default_prompts();
+        $main_prompt = array_values($default_prompts['main'])[0];
     }
 
-    if (empty($title) || empty($sections)) wp_send_json_error('Заголовок и разделы обязательны');
+    if (empty($title) || empty($sections)) wp_send_json_error(__( 'Заголовок и разделы обязательны', 'ai-generator-pro' ));
 
     $replace = [
         '{{topic}}' => $topic,
@@ -239,19 +272,16 @@ function aiagp_ajax_generate_article() {
     $api_keys = aiagp_get_api_keys();
 
     // Определение max_tokens на основе желаемой длины статьи
-    // Используем более высокий лимит для Gemini, если он выбран, учитывая его возможности.
-    // GPT-4o также поддерживает большие контексты, но 4000 токенов - это хороший минимум для длинной статьи.
-    $target_max_tokens = 4000; // Базовый разумный лимит для большинства статей
-    if ($length > 2000) { // Если пользователь запросил очень длинную статью (более 2000 символов)
-        $target_max_tokens = 8000; // Можем попробовать до 8000 токенов, если провайдер позволяет
+    $target_max_tokens = 4000;
+    if ($length > 2000) {
+        $target_max_tokens = 8000;
     }
-    // Можно еще увеличить для Gemini, если уверены, что модель справится и это не приведет к перерасходу.
-    if ($ai_provider === 'gemini' && $length > 5000) { // Например, для очень больших статей
-         $target_max_tokens = 16000; // Gemini 1.5 Pro поддерживает до 1 млн токенов, но это очень много для одной статьи.
+    if ($ai_provider === 'gemini' && $length > 5000) {
+         $target_max_tokens = 16000;
     }
 
     try {
-        $result = aiagp_call_ai($ai_provider, $prompt, $target_max_tokens, $api_keys); //
+        $result = aiagp_call_ai($ai_provider, $prompt, $target_max_tokens, $api_keys);
         wp_send_json_success(trim($result));
     } catch (Exception $e) {
         wp_send_json_error($e->getMessage());
@@ -268,7 +298,7 @@ function aiagp_page() {
             sanitize_text_field($_POST['openai_api_key'] ?? ''),
             sanitize_text_field($_POST['gemini_api_key'] ?? '')
         );
-        echo '<div class="notice notice-success">API ключи сохранены!</div>';
+        echo '<div class="notice notice-success">' . esc_html__('API ключи сохранены!', 'ai-generator-pro') . '</div>';
     }
 
     // Сохранение пользовательских промптов и других настроек
@@ -278,7 +308,7 @@ function aiagp_page() {
             $_POST['section_prompt'] ?? '',
             $_POST['main_prompt'] ?? ''
         );
-        echo '<div class="notice notice-success">Настройки сохранены!</div>';
+        echo '<div class="notice notice-success">' . esc_html__('Настройки сохранены!', 'ai-generator-pro') . '</div>';
     }
 
     // Сохранение статьи как черновик
@@ -289,7 +319,7 @@ function aiagp_page() {
         $post_content = wp_kses_post($_POST['ai_article'] ?? '');
 
         if (empty($post_title) || empty($post_content)) {
-            echo '<div class="notice notice-error is-dismissible"><p><strong>Ошибка:</strong> Для сохранения статьи как черновика необходим заголовок и контент.</p></div>';
+            echo '<div class="notice notice-error is-dismissible"><p><strong>' . esc_html__('Ошибка:', 'ai-generator-pro') . '</strong> ' . esc_html__('Для сохранения статьи как черновика необходим заголовок и контент.', 'ai-generator-pro') . '</p></div>';
         } else {
             $post_data = array(
                 'post_title'    => $post_title,
@@ -300,9 +330,9 @@ function aiagp_page() {
             $post_id = wp_insert_post($post_data);
 
             if (is_wp_error($post_id)) {
-                echo '<div class="notice notice-error is-dismissible"><p><strong>Ошибка при сохранении:</strong> ' . esc_html($post_id->get_error_message()) . '</p></div>';
+                echo '<div class="notice notice-error is-dismissible"><p><strong>' . esc_html__('Ошибка при сохранении:', 'ai-generator-pro') . '</strong> ' . esc_html($post_id->get_error_message()) . '</p></div>';
             } else {
-                echo '<div class="notice notice-success is-dismissible"><p>Статья сохранена как черновик! <a href="' . get_edit_post_link($post_id) . '" target="_blank">Редактировать черновик</a></p></div>';
+                echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__('Статья сохранена как черновик!', 'ai-generator-pro') . ' <a href="' . get_edit_post_link($post_id) . '" target="_blank">' . esc_html__('Редактировать черновик', 'ai-generator-pro') . '</a></p></div>';
             }
         }
     }
@@ -310,11 +340,11 @@ function aiagp_page() {
 
     $api_keys = aiagp_get_api_keys();
     $saved_prompts = aiagp_get_prompts();
-    $default_prompts_data = aiagp_get_default_prompts(); //
+    $default_prompts_data = aiagp_get_default_prompts();
 
-    $title_prompt = $saved_prompts['title_prompt'] ?: array_values($default_prompts_data['title'])[0]; //
-    $main_prompt = $saved_prompts['main_prompt'] ?: array_values($default_prompts_data['main'])[0]; //
-    $section_prompt = $saved_prompts['section_prompt'] ?: array_values($default_prompts_data['section'])[0]; //
+    $title_prompt = $saved_prompts['title_prompt'] ?: array_values($default_prompts_data['title'])[0];
+    $main_prompt = $saved_prompts['main_prompt'] ?: array_values($default_prompts_data['main'])[0];
+    $section_prompt = $saved_prompts['section_prompt'] ?: array_values($default_prompts_data['section'])[0];
 
     // Получаем остальные настройки из POST или используем дефолтные
     $custom_topic = sanitize_text_field($_POST['custom_topic'] ?? '');
@@ -331,20 +361,20 @@ function aiagp_page() {
     $ai_article = wp_kses_post($_POST['ai_article'] ?? '');
 
     $tones = [
-        'neutral' => 'Нейтральный',
-        'friendly' => 'Дружелюбный',
-        'expert' => 'Экспертный',
-        'formal' => 'Формальный',
-        'informative' => 'Информативный',
-        'sales' => 'Продажный'
+        'neutral' => __('Нейтральный', 'ai-generator-pro'),
+        'friendly' => __('Дружелюбный', 'ai-generator-pro'),
+        'expert' => __('Экспертный', 'ai-generator-pro'),
+        'formal' => __('Формальный', 'ai-generator-pro'),
+        'informative' => __('Информативный', 'ai-generator-pro'),
+        'sales' => __('Продажный', 'ai-generator-pro')
     ];
     $styles = [
-        'blog' => 'Обычный блог',
-        'scientific' => 'Научный',
-        'simple' => 'Простой',
-        'conversational' => 'Разговорный',
-        'creative' => 'Креативный',
-        'marketing' => 'Маркетинг'
+        'blog' => __('Обычный блог', 'ai-generator-pro'),
+        'scientific' => __('Научный', 'ai-generator-pro'),
+        'simple' => __('Простой', 'ai-generator-pro'),
+        'conversational' => __('Разговорный', 'ai-generator-pro'),
+        'creative' => __('Креативный', 'ai-generator-pro'),
+        'marketing' => __('Маркетинг', 'ai-generator-pro')
     ];
 
     render_ai_form([
@@ -372,56 +402,56 @@ function render_ai_form($vars) {
     extract($vars);
     ?>
     <div class="wrap">
-        <h1>AI Article Generator PRO</h1>
+        <h1><?php esc_html_e('AI Article Generator PRO', 'ai-generator-pro'); ?></h1>
 
         <div id="aiagp_messages" style="display:none; margin-top: 15px;"></div>
 
-        <h2>1. OpenAI и Google Gemini API Ключи</h2>
+        <h2><?php esc_html_e('1. OpenAI и Google Gemini API Ключи', 'ai-generator-pro'); ?></h2>
         <form method="post" style="margin-bottom:20px;">
             <?php wp_nonce_field('aiagp_save_api_keys'); ?>
-            <label for="openai_api_key">OpenAI API Ключ:</label><br>
-            <input type="password" id="openai_api_key" name="openai_api_key" style="width:350px;" value="<?php echo esc_attr($openai_api_key); ?>" placeholder="Введите OpenAI API ключ" autocomplete="off">
+            <label for="openai_api_key"><?php esc_html_e('OpenAI API Ключ:', 'ai-generator-pro'); ?></label><br>
+            <input type="password" id="openai_api_key" name="openai_api_key" style="width:350px;" value="<?php echo esc_attr($openai_api_key); ?>" placeholder="<?php esc_attr_e('Введите OpenAI API ключ', 'ai-generator-pro'); ?>" autocomplete="off">
             <label style="font-weight: normal; margin-left: 10px;">
-                <input type="checkbox" id="toggle_openai_key"> Показать ключ
+                <input type="checkbox" id="toggle_openai_key"> <?php esc_html_e('Показать ключ', 'ai-generator-pro'); ?>
             </label><br><br>
 
-            <label for="gemini_api_key">Google Gemini API Ключ:</label><br>
-            <input type="password" id="gemini_api_key" name="gemini_api_key" style="width:350px;" value="<?php echo esc_attr($gemini_api_key); ?>" placeholder="Введите Google Gemini API ключ" autocomplete="off">
+            <label for="gemini_api_key"><?php esc_html_e('Google Gemini API Ключ:', 'ai-generator-pro'); ?></label><br>
+            <input type="password" id="gemini_api_key" name="gemini_api_key" style="width:350px;" value="<?php echo esc_attr($gemini_api_key); ?>" placeholder="<?php esc_attr_e('Введите Google Gemini API ключ', 'ai-generator-pro'); ?>" autocomplete="off">
             <label style="font-weight: normal; margin-left: 10px;">
-                <input type="checkbox" id="toggle_gemini_key"> Показать ключ
+                <input type="checkbox" id="toggle_gemini_key"> <?php esc_html_e('Показать ключ', 'ai-generator-pro'); ?>
             </label><br><br>
 
-            <input type="submit" name="save_api_keys" class="button button-primary" value="Сохранить ключи">
+            <input type="submit" name="save_api_keys" class="button button-primary" value="<?php esc_attr_e('Сохранить ключи', 'ai-generator-pro'); ?>">
         </form>
 
-        <h2>2. Настройки и генерация</h2>
+        <h2><?php esc_html_e('2. Настройки и генерация', 'ai-generator-pro'); ?></h2>
         <form id="aiagp-main-form" method="post" style="max-width: 900px;">
             <?php wp_nonce_field('aiagp_save_article_nonce'); ?>
             <input type="hidden" name="aiagp_settings_submitted" value="1">
 
-            <label><b>Промпт для заголовка:</b></label><br>
+            <label><b><?php esc_html_e('Промпт для заголовка:', 'ai-generator-pro'); ?></b></label><br>
             <textarea name="title_prompt" rows="2" cols="90"><?php echo esc_textarea($title_prompt); ?></textarea><br><br>
 
-            <label><b>Промпт для статьи:</b></label><br>
+            <label><b><?php esc_html_e('Промпт для статьи:', 'ai-generator-pro'); ?></b></label><br>
             <textarea name="main_prompt" rows="3" cols="90"><?php echo esc_textarea($main_prompt); ?></textarea><br><br>
 
-            <label><b>Промпт для разделов:</b></label><br>
+            <label><b><?php esc_html_e('Промпт для разделов:', 'ai-generator-pro'); ?></b></label><br>
             <textarea name="section_prompt" rows="2" cols="90"><?php echo esc_textarea($section_prompt); ?></textarea><br><br>
 
-            <label><b>Тема статьи:</b></label><br>
+            <label><b><?php esc_html_e('Тема статьи:', 'ai-generator-pro'); ?></b></label><br>
             <input type="text" name="custom_topic" style="width:330px;" value="<?php echo esc_attr($custom_topic); ?>"><br><br>
 
-            <label><b>Язык:</b></label>
+            <label><b><?php esc_html_e('Язык:', 'ai-generator-pro'); ?></b></label>
             <select name="language">
-                <option value="українська" <?php selected($language, 'українська'); ?>>українська</option>
-                <option value="русский" <?php selected($language, 'русский'); ?>>русский</option>
-                <option value="english" <?php selected($language, 'english'); ?>>english</option>
+                <option value="українська" <?php selected($language, 'українська'); ?>><?php esc_html_e('Украинский', 'ai-generator-pro'); ?></option>
+                <option value="русский" <?php selected($language, 'русский'); ?>><?php esc_html_e('Русский', 'ai-generator-pro'); ?></option>
+                <option value="english" <?php selected($language, 'english'); ?>><?php esc_html_e('Английский', 'ai-generator-pro'); ?></option>
             </select>&nbsp;&nbsp;&nbsp;
 
-            <label><b>Длина (символов):</b></label>
+            <label><b><?php esc_html_e('Длина (символов):', 'ai-generator-pro'); ?></b></label>
             <input type="number" name="article_length" min="500" max="10000" step="100" value="<?php echo esc_attr($article_length); ?>"><br><br>
 
-            <label><b>Тон:</b></label>
+            <label><b><?php esc_html_e('Тон:', 'ai-generator-pro'); ?></b></label>
             <select name="tone">
                 <?php
                 foreach ($tones as $val => $label) {
@@ -430,7 +460,7 @@ function render_ai_form($vars) {
                 ?>
             </select> &nbsp;
 
-            <label><b>Стиль:</b></label>
+            <label><b><?php esc_html_e('Стиль:', 'ai-generator-pro'); ?></b></label>
             <select name="style">
                 <?php
                 foreach ($styles as $val => $label) {
@@ -439,177 +469,44 @@ function render_ai_form($vars) {
                 ?>
             </select>&nbsp;&nbsp;&nbsp;
 
-            <label><b>Использовать AI:</b></label>
+            <label><b><?php esc_html_e('Использовать AI:', 'ai-generator-pro'); ?></b></label>
             <select name="ai_provider">
-                <option value="openai" <?php selected($ai_provider, 'openai'); ?>>OpenAI (GPT-4o)</option>
-                <option value="gemini" <?php selected($ai_provider, 'gemini'); ?>>Google Gemini (Gemini 1.5 Pro)</option>
+                <option value="openai" <?php selected($ai_provider, 'openai'); ?>><?php esc_html_e('OpenAI (GPT-4o)', 'ai-generator-pro'); ?></option>
+                <option value="gemini" <?php selected($ai_provider, 'gemini'); ?>><?php esc_html_e('Google Gemini (Gemini 1.5 Pro)', 'ai-generator-pro'); ?></option>
             </select><br><br>
 
-            <label><b>Количество разделов:</b></label>
+            <label><b><?php esc_html_e('Количество разделов:', 'ai-generator-pro'); ?></b></label>
             <select name="num_sections">
                 <?php for ($i=2; $i<=7; $i++): ?>
                     <option value="<?php echo $i; ?>" <?php selected($num_sections, $i); ?>><?php echo $i; ?></option>
                 <?php endfor; ?>
             </select><br><br>
 
-            <label><b>Заголовок статьи ({{title}}):</b></label><br>
+            <label><b><?php esc_html_e('Заголовок статьи ({{title}}):', 'ai-generator-pro'); ?></b></label><br>
             <input type="text" name="ai_title" id="ai_title_input" style="width:600px;" value="<?php echo esc_attr($ai_title); ?>">
-            <button type="button" id="generate_title_btn" class="button" style="margin-left:5px;">Сгенерировать заголовок</button>
+            <button type="button" id="generate_title_btn" class="button" style="margin-left:5px;"><?php esc_html_e('Сгенерировать заголовок', 'ai-generator-pro'); ?></button>
             <span id="title_loader" style="display:none; margin-left: 10px;">⏳</span>
             <br><br>
 
-            <label><b>Список разделов (каждая строка — заголовок, {{sections}}):</b></label><br>
+            <label><b><?php esc_html_e('Список разделов (каждая строка — заголовок, {{sections}}):', 'ai-generator-pro'); ?></b></label><br>
             <textarea name="sections_text" id="sections_text_area" rows="5" cols="90"><?php echo esc_textarea($sections_text); ?></textarea>
-            <button type="button" id="generate_sections_btn" class="button" style="margin-left:5px;">Сгенерировать разделы</button>
+            <button type="button" id="generate_sections_btn" class="button" style="margin-left:5px;"><?php esc_html_e('Сгенерировать разделы', 'ai-generator-pro'); ?></button>
             <span id="sections_loader" style="display:none; margin-left: 10px;">⏳</span>
             <br><br>
 
-            <label><b>Текст статьи ({{article}}):</b></label><br>
+            <label><b><?php esc_html_e('Текст статьи ({{article}}):', 'ai-generator-pro'); ?></b></label><br>
             <textarea name="ai_article" id="ai_article_area" rows="15" cols="90"><?php echo esc_textarea($ai_article); ?></textarea>
             <br>
 
             <?php
             $disabled = (trim($ai_title) === '' || trim($sections_text) === '');
             ?>
-            <button type="button" id="generate_article_btn" class="button button-primary" <?php echo $disabled ? 'disabled style="opacity:0.7;"' : ''; ?>>Сгенерировать статью</button>
+            <button type="button" id="generate_article_btn" class="button button-primary" <?php echo $disabled ? 'disabled style="opacity:0.7;"' : ''; ?>><?php esc_html_e('Сгенерировать статью', 'ai-generator-pro'); ?></button>
             <span id="article_loader" style="display:none; margin-left: 10px;">⏳</span>
 
-            <input type="submit" name="save_article" class="button button-secondary" value="Сохранить как черновик" style="margin-left: 15px;">
+            <input type="submit" name="save_article" class="button button-secondary" value="<?php esc_attr_e('Сохранить как черновик', 'ai-generator-pro'); ?>" style="margin-left: 15px;">
         </form>
     </div>
-
-    <script>
-    // Все JS переносим в aiagp-admin.js
-    // document.getElementById('toggle_openai_key').addEventListener('change', function() {
-    //     var input = document.getElementById('openai_api_key');
-    //     input.type = this.checked ? 'text' : 'password';
-    // });
-    // document.getElementById('toggle_gemini_key').addEventListener('change', function() {
-    //     var input = document.getElementById('gemini_api_key');
-    //     input.type = this.checked ? 'text' : 'password';
-    // });
-
-    // jQuery(function($){
-    //     // Функция для отображения сообщений пользователю
-    //     function showMessage(msg, type = 'error') {
-    //         const messagesDiv = $('#aiagp_messages');
-    //         messagesDiv.removeClass('notice notice-success notice-error').addClass('notice is-dismissible');
-    //         if (type === 'success') {
-    //             messagesDiv.addClass('notice-success').html('<p><strong>' + msg + '</strong></p>');
-    //         } else {
-    //             messagesDiv.addClass('notice-error').html('<p><strong>' + msg + '</strong></p>');
-    //         }
-    //         messagesDiv.show();
-    //         // Скрыть сообщение через 8 секунд
-    //         setTimeout(() => messagesDiv.fadeOut(500), 8000);
-    //     }
-
-    //     function ajaxGenerate(button, loaderSpan, ajaxData, successCallback) {
-    //         button.prop('disabled', true).css('opacity', '0.7');
-    //         loaderSpan.show();
-    //         $('#aiagp_messages').hide(); // Скрыть предыдущие сообщения
-
-    //         $.post(aiagp_ajax.ajax_url, ajaxData, function(response){
-    //             if(response.success){
-    //                 successCallback(response.data);
-    //                 showMessage('Генерация завершена успешно!', 'success');
-    //             } else {
-    //                 showMessage(response.data);
-    //             }
-    //             loaderSpan.hide();
-    //             button.prop('disabled', false).css('opacity', '1');
-    //             updateArticleButtonState(); // Обновить состояние кнопки "Сгенерировать статью"
-    //         }).fail(function(jqXHR, textStatus, errorThrown) {
-    //             showMessage('AJAX Ошибка: ' + textStatus + (errorThrown ? ' - ' + errorThrown : '') + '. Проверьте консоль для деталей.');
-    //             console.error('AJAX Error:', textStatus, errorThrown, jqXHR);
-    //             loaderSpan.hide();
-    //             button.prop('disabled', false).css('opacity', '1');
-    //         });
-    //     }
-
-    //     // Обновление состояния кнопки "Сгенерировать статью"
-    //     function updateArticleButtonState() {
-    //         const title = $('#ai_title_input').val().trim();
-    //         const sections = $('#sections_text_area').val().trim();
-    //         const generateArticleBtn = $('#generate_article_btn');
-
-    //         if (title !== '' && sections !== '') {
-    //             generateArticleBtn.prop('disabled', false).css('opacity', '1');
-    //         } else {
-    //             generateArticleBtn.prop('disabled', true).css('opacity', '0.7');
-    //         }
-    //     }
-
-    //     // Вызов при загрузке страницы и при изменении полей
-    //     $(document).ready(function() {
-    //         updateArticleButtonState();
-    //         $('#ai_title_input, #sections_text_area').on('input', updateArticleButtonState);
-    //     });
-
-    //     $('#generate_title_btn').click(function(){
-    //         ajaxGenerate(
-    //             $(this),
-    //             $('#title_loader'),
-    //             {
-    //                 action: 'aiagp_generate_title',
-    //                 security: aiagp_ajax.nonce,
-    //                 topic: $('input[name="custom_topic"]').val(),
-    //                 language: $('select[name="language"]').val(),
-    //                 length: $('input[name="article_length"]').val(),
-    //                 tone: $('select[name="tone"]').val(),
-    //                 style: $('select[name="style"]').val(),
-    //                 num_sections: $('select[name="num_sections"]').val(),
-    //                 title_prompt: $('textarea[name="title_prompt"]').val(),
-    //                 ai_provider: $('select[name="ai_provider"]').val()
-    //             },
-    //             function(data){ $('#ai_title_input').val(data); }
-    //         );
-    //     });
-
-    //     $('#generate_sections_btn').click(function(){
-    //         ajaxGenerate(
-    //             $(this),
-    //             $('#sections_loader'),
-    //             {
-    //                 action: 'aiagp_generate_sections',
-    //                 security: aiagp_ajax.nonce,
-    //                 topic: $('input[name="custom_topic"]').val(),
-    //                 language: $('select[name="language"]').val(),
-    //                 length: $('input[name="article_length"]').val(),
-    //                 tone: $('select[name="tone"]').val(),
-    //                 style: $('select[name="style"]').val(),
-    //                 num_sections: $('select[name="num_sections"]').val(),
-    //                 title: $('input[name="ai_title"]').val(),
-    //                 section_prompt: $('textarea[name="section_prompt"]').val(),
-    //                 ai_provider: $('select[name="ai_provider"]').val()
-    //             },
-    //             function(data){ $('#sections_text_area').val(data); }
-    //         );
-    //     });
-
-    //     $('#generate_article_btn').click(function(){
-    //         ajaxGenerate(
-    //             $(this),
-    //             $('#article_loader'),
-    //             {
-    //                 action: 'aiagp_generate_article',
-    //                 security: aiagp_ajax.nonce,
-    //                 topic: $('input[name="custom_topic"]').val(),
-    //                 language: $('select[name="language"]').val(),
-    //                 length: $('input[name="article_length"]').val(),
-    //                 tone: $('select[name="tone"]').val(),
-    //                 style: $('select[name="style"]').val(),
-    //                 num_sections: $('select[name="num_sections"]').val(),
-    //                 title: $('input[name="ai_title"]').val(),
-    //                 sections: $('textarea[name="sections_text"]').val(),
-    //                 main_prompt: $('textarea[name="main_prompt"]').val(),
-    //                 ai_provider: $('select[name="ai_provider"]').val()
-    //             },
-    //             function(data){ $('#ai_article_area').val(data); }
-    //         );
-    //     });
-    // });
-    </script>
     <?php
 }
 
@@ -635,7 +532,7 @@ function aiagp_gpt($prompt, $openai_api_key, $max_tokens=800) {
     if (is_wp_error($response)) {
         $error_message = $response->get_error_message();
         error_log("AIAGP OpenAI API Error: " . $error_message . " | Prompt: " . substr($prompt, 0, 200));
-        return 'Ошибка API OpenAI: ' . $error_message . ' Пожалуйста, проверьте ваше интернет-соединение или настройки сервера.';
+        return sprintf(__( 'Ошибка API OpenAI: %s. %s', 'ai-generator-pro' ), $error_message, __( 'Пожалуйста, проверьте ваше интернет-соединение или настройки сервера.', 'ai-generator-pro' ));
     }
 
     $http_code = wp_remote_retrieve_response_code($response);
@@ -643,20 +540,22 @@ function aiagp_gpt($prompt, $openai_api_key, $max_tokens=800) {
     $body = json_decode($body_raw, true);
 
     if ($http_code !== 200) {
-        $error_details = 'Неизвестная ошибка.';
+        $error_details = '';
+        $user_friendly_message = '';
+
         if (isset($body['error']['message'])) {
             $error_details = $body['error']['message'];
             if ($http_code === 429) {
-                $user_friendly_message = 'Превышен лимит использования OpenAI API. Пожалуйста, проверьте свой тарифный план и платежные данные на платформе OpenAI.';
+                $user_friendly_message = __( 'Превышен лимит использования OpenAI API. Пожалуйста, проверьте свой тарифный план и платежные данные на платформе OpenAI.', 'ai-generator-pro' );
             } else {
-                $user_friendly_message = 'OpenAI API вернул ошибку: ' . $error_details;
+                $user_friendly_message = sprintf(__( 'OpenAI API вернул ошибку: %s', 'ai-generator-pro' ), $error_details);
             }
         } else {
-             $user_friendly_message = 'OpenAI API вернул ошибку с HTTP кодом ' . $http_code . '. Подробности: ' . $body_raw;
+             $user_friendly_message = sprintf(__( 'OpenAI API вернул ошибку с HTTP кодом %d. Подробности: %s', 'ai-generator-pro' ), $http_code, $body_raw);
         }
 
         error_log("AIAGP OpenAI API HTTP Error ($http_code): " . $error_details . " | Prompt: " . substr($prompt, 0, 200) . " | Response Body: " . $body_raw);
-        return 'Ошибка OpenAI (HTTP ' . $http_code . '): ' . $user_friendly_message;
+        return sprintf(__( 'Ошибка OpenAI (HTTP %d): %s', 'ai-generator-pro' ), $http_code, $user_friendly_message);
     }
 
     if (isset($body['choices'][0]['message']['content'])) {
@@ -664,7 +563,7 @@ function aiagp_gpt($prompt, $openai_api_key, $max_tokens=800) {
     }
 
     error_log("AIAGP OpenAI API Empty Content Error: No content in response. | Prompt: " . substr($prompt, 0, 200) . " | Response Body: " . $body_raw);
-    return 'Ошибка OpenAI: не получен ожидаемый результат. Пожалуйста, попробуйте еще раз.';
+    return __( 'Ошибка OpenAI: не получен ожидаемый результат. Пожалуйста, попробуйте еще раз.', 'ai-generator-pro' );
 }
 
 // Функция для вызова Google Gemini API
@@ -696,7 +595,7 @@ function aiagp_gemini($prompt, $gemini_api_key, $max_tokens=800) {
     if (is_wp_error($response)) {
         $error_message = $response->get_error_message();
         error_log("AIAGP Gemini API Error: " . $error_message . " | Prompt: " . substr($prompt, 0, 200));
-        return 'Ошибка API Gemini: ' . $error_message . ' Пожалуйста, проверьте ваше интернет-соединение или настройки сервера.';
+        return sprintf(__( 'Ошибка API Gemini: %s. %s', 'ai-generator-pro' ), $error_message, __( 'Пожалуйста, проверьте ваше интернет-соединение или настройки сервера.', 'ai-generator-pro' ));
     }
 
     $http_code = wp_remote_retrieve_response_code($response);
@@ -704,22 +603,22 @@ function aiagp_gemini($prompt, $gemini_api_key, $max_tokens=800) {
     $body = json_decode($body_raw, true);
 
     if ($http_code !== 200) {
-        $error_details = 'Неизвестная ошибка.';
-        $user_friendly_message = 'Gemini API вернул ошибку.';
+        $error_details = '';
+        $user_friendly_message = '';
 
         if (isset($body['error']['message'])) {
             $error_details = $body['error']['message'];
             if (strpos($error_details, 'User location is not supported') !== false) {
-                 $user_friendly_message = 'Ваше текущее местоположение не поддерживается для использования Google Gemini API. Пожалуйста, попробуйте воспользоваться VPN или другим хостингом.';
+                 $user_friendly_message = __( 'Ваше текущее местоположение не поддерживается для использования Google Gemini API. Пожалуйста, попробуйте воспользоваться VPN или другим хостингом.', 'ai-generator-pro' );
             } else {
-                 $user_friendly_message = 'Google Gemini API вернул ошибку: ' . $error_details;
+                 $user_friendly_message = sprintf(__( 'Google Gemini API вернул ошибку: %s', 'ai-generator-pro' ), $error_details);
             }
         } else {
-            $user_friendly_message = 'Google Gemini API вернул ошибку с HTTP кодом ' . $http_code . '. Подробности: ' . $body_raw;
+            $user_friendly_message = sprintf(__( 'Google Gemini API вернул ошибку с HTTP кодом %d. Подробности: %s', 'ai-generator-pro' ), $http_code, $body_raw);
         }
 
         error_log("AIAGP Gemini API HTTP Error ($http_code): " . $error_details . " | Prompt: " . substr($prompt, 0, 200) . " | Response Body: " . $body_raw);
-        return 'Ошибка Gemini (HTTP ' . $http_code . '): ' . $user_friendly_message;
+        return sprintf(__( 'Ошибка Gemini (HTTP %d): %s', 'ai-generator-pro' ), $http_code, $user_friendly_message);
     }
 
     if (isset($body['candidates'][0]['content']['parts'][0]['text'])) {
@@ -727,5 +626,5 @@ function aiagp_gemini($prompt, $gemini_api_key, $max_tokens=800) {
     }
 
     error_log("AIAGP Gemini API Empty Content Error: No content in response. | Prompt: " . substr($prompt, 0, 200) . " | Response Body: " . $body_raw);
-    return 'Ошибка Gemini: не получен ожидаемый результат. Пожалуйста, попробуйте еще раз.';
+    return __( 'Ошибка Gemini: не получен ожидаемый результат. Пожалуйста, попробуйте еще раз.', 'ai-generator-pro' );
 }
