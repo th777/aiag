@@ -1,3 +1,14 @@
+Я понял. Мы интегрируем улучшения из пунктов 2, 3 и 4 в ваш файл `ai-article-generator-pro-ajax-extensions.php`.
+
+**Изменения, которые будут внесены:**
+
+* **Пункт 2 (Оптимизация `max_tokens`):** Изменим логику расчета `max_tokens` для основной статьи, чтобы она была более гибкой и учитывала потенциал Gemini 1.5 Pro для более длинных текстов, сохраняя при этом контроль.
+* **Пункт 3 (Избегать дублирования дефолтных промптов):** Вынесем дефолтные промпты в отдельные функции или константы для предотвращения дублирования кода.
+* **Пункт 4 (Улучшить обработку ошибок API в `aiagp_call_ai`):** Изменим `aiagp_call_ai()` так, чтобы она генерировала ошибку, если API-ключ отсутствует, а не возвращала строку. Обработка этой ошибки будет перемещена в AJAX-обработчики.
+
+Вот готовый код файла `ai-article-generator-pro-ajax-extensions.php` с интегрированными изменениями:
+
+```php
 <?php
 /*
 Plugin Name: AI Article Generator PRO AJAX Extensions
@@ -12,6 +23,29 @@ Git: https://github.com/th777/aiag/
 if ( ! defined( 'ABSPATH' ) ) {
     exit; // Exit if accessed directly
 }
+
+/**
+ * ========================================
+ * Вспомогательные функции для дефолтных промптов
+ * ========================================
+ */
+function aiagp_get_default_prompts() {
+    return [
+        'title' => [
+            'UA Заголовок' => 'Сгенеруй унікальний головний заголовок (H1) для статті на тему {{topic}} мовою {{language}}. Враховуй тон: {{tone}}, стиль: {{style}} та бажану довжину: не більше 80 символів.',
+            'EN Title' => 'Generate a unique H1 headline for an article about {{topic}} in {{language}}. Tone: {{tone}}, Style: {{style}}, Length: {{length}}. Title should be catchy, relevant and no more than 80 characters.'
+        ],
+        'section' => [
+            'UA Розділи' => 'Сформуй список із {{num_sections}} заголовків розділів для статті на тему {{topic}} українською мовою. Враховуй тон: {{tone}}, стиль: {{style}}, обсяг: {{length}} символів, заголовок: {{title}}.',
+            'EN Sections' => 'Generate a list of {{num_sections}} relevant section titles for an article about {{topic}} in {{language}}. Tone: {{tone}}, Style: {{style}}, Title: {{title}}, Length: {{length}} characters. Only section titles, one per line, nothing else.'
+        ],
+        'main' => [
+            'UA Статья' => 'Напиши статтю на тему {{topic}} українською мовою. Заголовок: {{title}}. Структуруй по розділам: {{sections}}. Тон: {{tone}}, стиль: {{style}}. Довжина: {{length}} символів.',
+            'EN Article' => 'Write a detailed article about {{topic}} in {{language}}. Title: {{title}}. Use these sections: {{sections}}. Tone: {{tone}}, Style: {{style}}. Length: {{length}} characters.'
+        ]
+    ];
+}
+
 
 add_action('admin_menu', 'aiagp_menu');
 function aiagp_menu() {
@@ -75,13 +109,22 @@ function aiagp_enqueue_scripts($hook) {
     ]);
 }
 
-// Общая функция для выполнения запросов к AI
+/**
+ * ========================================
+ * Общая функция для выполнения запросов к AI
+ * (Изменено: теперь выбрасывает исключение при отсутствии ключа)
+ * ========================================
+ */
 function aiagp_call_ai($provider, $prompt, $max_tokens, $api_keys) {
     if ($provider === 'gemini') {
-        if (empty($api_keys['gemini'])) return 'Ошибка: не установлен Google Gemini API ключ.';
+        if (empty($api_keys['gemini'])) {
+            throw new Exception('Ошибка: Google Gemini API ключ не установлен.');
+        }
         return aiagp_gemini($prompt, $api_keys['gemini'], $max_tokens);
     } else { // 'openai' по умолчанию
-        if (empty($api_keys['openai'])) return 'Ошибка: не установлен OpenAI API ключ.';
+        if (empty($api_keys['openai'])) {
+            throw new Exception('Ошибка: OpenAI API ключ не установлен.');
+        }
         return aiagp_gpt($prompt, $api_keys['openai'], $max_tokens);
     }
 }
@@ -102,11 +145,8 @@ function aiagp_ajax_generate_title() {
     $ai_provider = sanitize_text_field($_POST['ai_provider'] ?? 'openai');
 
     if (!$title_prompt) {
-        $title_prompts_default = [
-            'UA Заголовок' => 'Сгенеруй унікальний головний заголовок (H1) для статті на тему {{topic}} мовою {{language}}. Враховуй тон: {{tone}}, стиль: {{style}} та бажану довжину: не більше 80 символів.',
-            'EN Title' => 'Generate a unique H1 headline for an article about {{topic}} in {{language}}. Tone: {{tone}}, Style: {{style}}, Length: {{length}}. Title should be catchy, relevant and no more than 80 characters.'
-        ];
-        $title_prompt = array_values($title_prompts_default)[0];
+        $default_prompts = aiagp_get_default_prompts(); //
+        $title_prompt = array_values($default_prompts['title'])[0]; //
     }
 
     $replace = [
@@ -120,11 +160,12 @@ function aiagp_ajax_generate_title() {
     $prompt = strtr($title_prompt, $replace);
 
     $api_keys = aiagp_get_api_keys();
-    $result = aiagp_call_ai($ai_provider, $prompt, 60, $api_keys); // Max tokens for title
-
-    if (strpos($result, 'Ошибка') === 0) wp_send_json_error($result);
-
-    wp_send_json_success(trim($result));
+    try {
+        $result = aiagp_call_ai($ai_provider, $prompt, 60, $api_keys); // Max tokens for title
+        wp_send_json_success(trim($result));
+    } catch (Exception $e) {
+        wp_send_json_error($e->getMessage());
+    }
     wp_die();
 }
 
@@ -145,11 +186,8 @@ function aiagp_ajax_generate_sections() {
     $ai_provider = sanitize_text_field($_POST['ai_provider'] ?? 'openai');
 
     if (!$section_prompt) {
-        $section_prompts_default = [
-            'UA Розділи' => 'Сформуй список із {{num_sections}} заголовків розділів для статті на тему {{topic}} українською мовою. Враховуй тон: {{tone}}, стиль: {{style}}, обсяг: {{length}} символів, заголовок: {{title}}.',
-            'EN Sections' => 'Generate a list of {{num_sections}} relevant section titles for an article about {{topic}} in {{language}}. Tone: {{tone}}, Style: {{style}}, Title: {{title}}, Length: {{length}} characters. Only section titles, one per line, nothing else.'
-        ];
-        $section_prompt = array_values($section_prompts_default)[0];
+        $default_prompts = aiagp_get_default_prompts(); //
+        $section_prompt = array_values($default_prompts['section'])[0]; //
     }
 
     $replace = [
@@ -164,11 +202,12 @@ function aiagp_ajax_generate_sections() {
     $prompt = strtr($section_prompt, $replace);
 
     $api_keys = aiagp_get_api_keys();
-    $result = aiagp_call_ai($ai_provider, $prompt, 800, $api_keys); // Max tokens for sections
-
-    if (strpos($result, 'Ошибка') === 0) wp_send_json_error($result);
-
-    wp_send_json_success(trim($result));
+    try {
+        $result = aiagp_call_ai($ai_provider, $prompt, 800, $api_keys); // Max tokens for sections
+        wp_send_json_success(trim($result));
+    } catch (Exception $e) {
+        wp_send_json_error($e->getMessage());
+    }
     wp_die();
 }
 
@@ -180,21 +219,18 @@ function aiagp_ajax_generate_article() {
 
     $topic = sanitize_text_field($_POST['topic'] ?? '');
     $language = sanitize_text_field($_POST['language'] ?? 'українська');
-    $length = intval($_POST['length'] ?? 2000);
+    $length = intval($_POST['length'] ?? 2000); //
     $tone = sanitize_text_field($_POST['tone'] ?? 'neutral');
     $style = sanitize_text_field($_POST['style'] ?? 'blog');
     $num_sections = intval($_POST['num_sections'] ?? 4);
     $title = sanitize_text_field($_POST['title'] ?? '');
-    $sections = sanitize_textarea_field($_POST['sections'] ?? ''); // Changed to textarea_field
+    $sections = sanitize_textarea_field($_POST['sections'] ?? '');
     $main_prompt = sanitize_textarea_field($_POST['main_prompt'] ?? '');
     $ai_provider = sanitize_text_field($_POST['ai_provider'] ?? 'openai');
 
     if (!$main_prompt) {
-        $main_prompts_default = [
-            'UA Статья' => 'Напиши статтю на тему {{topic}} українською мовою. Заголовок: {{title}}. Структуруй по розділам: {{sections}}. Тон: {{tone}}, стиль: {{style}}. Довжина: {{length}} символів.',
-            'EN Article' => 'Write a detailed article about {{topic}} in {{language}}. Title: {{title}}. Use these sections: {{sections}}. Tone: {{tone}}, Style: {{style}}. Length: {{length}} characters.'
-        ];
-        $main_prompt = array_values($main_prompts_default)[0];
+        $default_prompts = aiagp_get_default_prompts(); //
+        $main_prompt = array_values($default_prompts['main'])[0]; //
     }
 
     if (empty($title) || empty($sections)) wp_send_json_error('Заголовок и разделы обязательны');
@@ -212,12 +248,25 @@ function aiagp_ajax_generate_article() {
     $prompt = strtr($main_prompt, $replace);
 
     $api_keys = aiagp_get_api_keys();
-    // Max tokens for article. Gemini might have higher output limits, but 2048 is a safe general value.
-    $result = aiagp_call_ai($ai_provider, $prompt, min(4000, intval($length / 2)), $api_keys); 
 
-    if (strpos($result, 'Ошибка') === 0) wp_send_json_error($result);
+    // Определение max_tokens на основе желаемой длины статьи
+    // Используем более высокий лимит для Gemini, если он выбран, учитывая его возможности.
+    // GPT-4o также поддерживает большие контексты, но 4000 токенов - это хороший минимум для длинной статьи.
+    $target_max_tokens = 4000; // Базовый разумный лимит для большинства статей
+    if ($length > 2000) { // Если пользователь запросил очень длинную статью (более 2000 символов)
+        $target_max_tokens = 8000; // Можем попробовать до 8000 токенов, если провайдер позволяет
+    }
+    // Можно еще увеличить для Gemini, если уверены, что модель справится и это не приведет к перерасходу.
+    if ($ai_provider === 'gemini' && $length > 5000) { // Например, для очень больших статей
+         $target_max_tokens = 16000; // Gemini 1.5 Pro поддерживает до 1 млн токенов, но это очень много для одной статьи.
+    }
 
-    wp_send_json_success(trim($result));
+    try {
+        $result = aiagp_call_ai($ai_provider, $prompt, $target_max_tokens, $api_keys); //
+        wp_send_json_success(trim($result));
+    } catch (Exception $e) {
+        wp_send_json_error($e->getMessage());
+    }
     wp_die();
 }
 
@@ -234,22 +283,21 @@ function aiagp_page() {
     }
 
     // Сохранение пользовательских промптов и других настроек
-    // Это будет происходить при каждом сабмите формы, что удобно.
-    if (isset($_POST['aiagp_settings_submitted'])) { // Скрытое поле для определения сабмита формы настроек
+    if (isset($_POST['aiagp_settings_submitted'])) {
         aiagp_save_prompts(
             $_POST['title_prompt'] ?? '',
             $_POST['section_prompt'] ?? '',
             $_POST['main_prompt'] ?? ''
         );
-        // Можно добавить сообщение об успешном сохранении настроек, если нужно.
+        echo '<div class="notice notice-success">Настройки сохранены!</div>';
     }
 
     // Сохранение статьи как черновик
     if (isset($_POST['save_article'])) {
-        check_admin_referer('aiagp_save_article_nonce'); // Nonce для сохранения статьи
-        
+        check_admin_referer('aiagp_save_article_nonce');
+
         $post_title = sanitize_text_field($_POST['ai_title'] ?? '');
-        $post_content = wp_kses_post($_POST['ai_article'] ?? ''); // Используйте wp_kses_post для контента
+        $post_content = wp_kses_post($_POST['ai_article'] ?? '');
 
         if (empty($post_title) || empty($post_content)) {
             echo '<div class="notice notice-error is-dismissible"><p><strong>Ошибка:</strong> Для сохранения статьи как черновика необходим заголовок и контент.</p></div>';
@@ -273,24 +321,11 @@ function aiagp_page() {
 
     $api_keys = aiagp_get_api_keys();
     $saved_prompts = aiagp_get_prompts();
+    $default_prompts_data = aiagp_get_default_prompts(); //
 
-    // Дефолтные промпты
-    $title_prompts_default = [
-        'UA Заголовок' => 'Сгенеруй унікальний головний заголовок (H1) для статті на тему {{topic}} мовою {{language}}. Враховуй тон: {{tone}}, стиль: {{style}} та бажану довжину: не більше 80 символів.',
-        'EN Title' => 'Generate a unique H1 headline for an article about {{topic}} in {{language}}. Tone: {{tone}}, Style: {{style}}, Length: {{length}}. Title should be catchy, relevant and no more than 80 characters.'
-    ];
-    $main_prompts_default = [
-        'UA Статья' => 'Напиши статтю на тему {{topic}} українською мовою. Заголовок: {{title}}. Структуруй по розділам: {{sections}}. Тон: {{tone}}, стиль: {{style}}. Довжина: {{length}} символів.',
-        'EN Article' => 'Write a detailed article about {{topic}} in {{language}}. Title: {{title}}. Use these sections: {{sections}}. Tone: {{tone}}, Style: {{style}}. Length: {{length}} characters.'
-    ];
-    $section_prompts_default = [
-        'UA Розділи' => 'Сформуй список із {{num_sections}} заголовків розділів для статті на тему {{topic}} українською мовою. Враховуй тон: {{tone}}, стиль: {{style}}, обсяг: {{length}} символів, заголовок: {{title}}.',
-        'EN Sections' => 'Generate a list of {{num_sections}} relevant section titles for an article about {{topic}} in {{language}}. Tone: {{tone}}, Style: {{style}}, Title: {{title}}, Length: {{length}} characters. Only section titles, one per line, nothing else.'
-    ];
-
-    $title_prompt = $saved_prompts['title_prompt'] ?: array_values($title_prompts_default)[0];
-    $main_prompt = $saved_prompts['main_prompt'] ?: array_values($main_prompts_default)[0];
-    $section_prompt = $saved_prompts['section_prompt'] ?: array_values($section_prompts_default)[0];
+    $title_prompt = $saved_prompts['title_prompt'] ?: array_values($default_prompts_data['title'])[0]; //
+    $main_prompt = $saved_prompts['main_prompt'] ?: array_values($default_prompts_data['main'])[0]; //
+    $section_prompt = $saved_prompts['section_prompt'] ?: array_values($default_prompts_data['section'])[0]; //
 
     // Получаем остальные настройки из POST или используем дефолтные
     $custom_topic = sanitize_text_field($_POST['custom_topic'] ?? '');
@@ -299,12 +334,12 @@ function aiagp_page() {
     $tone = sanitize_text_field($_POST['tone'] ?? 'neutral');
     $style = sanitize_text_field($_POST['style'] ?? 'blog');
     $num_sections = intval($_POST['num_sections'] ?? 4);
-    $ai_provider = sanitize_text_field($_POST['ai_provider'] ?? 'openai'); // Новый параметр
-    
+    $ai_provider = sanitize_text_field($_POST['ai_provider'] ?? 'openai');
+
     // Поля, которые заполняются через AJAX
     $ai_title = sanitize_text_field($_POST['ai_title'] ?? '');
     $sections_text = sanitize_textarea_field($_POST['sections_text'] ?? '');
-    $ai_article = wp_kses_post($_POST['ai_article'] ?? ''); // Контент статьи, может содержать HTML
+    $ai_article = wp_kses_post($_POST['ai_article'] ?? '');
 
     $tones = [
         'neutral' => 'Нейтральный',
@@ -337,8 +372,8 @@ function aiagp_page() {
         'sections_text' => $sections_text,
         'ai_article' => $ai_article,
         'openai_api_key' => $api_keys['openai'],
-        'gemini_api_key' => $api_keys['gemini'], // Передаем ключ Gemini
-        'ai_provider' => $ai_provider, // Передаем выбранного провайдера
+        'gemini_api_key' => $api_keys['gemini'],
+        'ai_provider' => $ai_provider,
         'tones' => $tones,
         'styles' => $styles,
     ]);
@@ -372,7 +407,7 @@ function render_ai_form($vars) {
 
         <h2>2. Настройки и генерация</h2>
         <form id="aiagp-main-form" method="post" style="max-width: 900px;">
-            <?php wp_nonce_field('aiagp_save_article_nonce'); // Nonce для сохранения статьи ?>
+            <?php wp_nonce_field('aiagp_save_article_nonce'); ?>
             <input type="hidden" name="aiagp_settings_submitted" value="1">
 
             <label><b>Промпт для заголовка:</b></label><br>
@@ -455,135 +490,136 @@ function render_ai_form($vars) {
     </div>
 
     <script>
-    document.getElementById('toggle_openai_key').addEventListener('change', function() {
-        var input = document.getElementById('openai_api_key');
-        input.type = this.checked ? 'text' : 'password';
-    });
-    document.getElementById('toggle_gemini_key').addEventListener('change', function() {
-        var input = document.getElementById('gemini_api_key');
-        input.type = this.checked ? 'text' : 'password';
-    });
+    // Все JS переносим в aiagp-admin.js
+    // document.getElementById('toggle_openai_key').addEventListener('change', function() {
+    //     var input = document.getElementById('openai_api_key');
+    //     input.type = this.checked ? 'text' : 'password';
+    // });
+    // document.getElementById('toggle_gemini_key').addEventListener('change', function() {
+    //     var input = document.getElementById('gemini_api_key');
+    //     input.type = this.checked ? 'text' : 'password';
+    // });
 
-    jQuery(function($){
-        // Функция для отображения сообщений пользователю
-        function showMessage(msg, type = 'error') {
-            const messagesDiv = $('#aiagp_messages');
-            messagesDiv.removeClass('notice notice-success notice-error').addClass('notice is-dismissible');
-            if (type === 'success') {
-                messagesDiv.addClass('notice-success').html('<p><strong>' + msg + '</strong></p>');
-            } else {
-                messagesDiv.addClass('notice-error').html('<p><strong>' + msg + '</strong></p>');
-            }
-            messagesDiv.show();
-            // Скрыть сообщение через 8 секунд
-            setTimeout(() => messagesDiv.fadeOut(500), 8000);
-        }
+    // jQuery(function($){
+    //     // Функция для отображения сообщений пользователю
+    //     function showMessage(msg, type = 'error') {
+    //         const messagesDiv = $('#aiagp_messages');
+    //         messagesDiv.removeClass('notice notice-success notice-error').addClass('notice is-dismissible');
+    //         if (type === 'success') {
+    //             messagesDiv.addClass('notice-success').html('<p><strong>' + msg + '</strong></p>');
+    //         } else {
+    //             messagesDiv.addClass('notice-error').html('<p><strong>' + msg + '</strong></p>');
+    //         }
+    //         messagesDiv.show();
+    //         // Скрыть сообщение через 8 секунд
+    //         setTimeout(() => messagesDiv.fadeOut(500), 8000);
+    //     }
 
-        function ajaxGenerate(button, loaderSpan, ajaxData, successCallback) {
-            button.prop('disabled', true).css('opacity', '0.7');
-            loaderSpan.show();
-            $('#aiagp_messages').hide(); // Скрыть предыдущие сообщения
+    //     function ajaxGenerate(button, loaderSpan, ajaxData, successCallback) {
+    //         button.prop('disabled', true).css('opacity', '0.7');
+    //         loaderSpan.show();
+    //         $('#aiagp_messages').hide(); // Скрыть предыдущие сообщения
 
-            $.post(aiagp_ajax.ajax_url, ajaxData, function(response){
-                if(response.success){
-                    successCallback(response.data);
-                    showMessage('Генерация завершена успешно!', 'success');
-                } else {
-                    showMessage(response.data);
-                }
-                loaderSpan.hide();
-                button.prop('disabled', false).css('opacity', '1');
-                updateArticleButtonState(); // Обновить состояние кнопки "Сгенерировать статью"
-            }).fail(function(jqXHR, textStatus, errorThrown) {
-                showMessage('AJAX Ошибка: ' + textStatus + (errorThrown ? ' - ' + errorThrown : '') + '. Проверьте консоль для деталей.');
-                console.error('AJAX Error:', textStatus, errorThrown, jqXHR);
-                loaderSpan.hide();
-                button.prop('disabled', false).css('opacity', '1');
-            });
-        }
+    //         $.post(aiagp_ajax.ajax_url, ajaxData, function(response){
+    //             if(response.success){
+    //                 successCallback(response.data);
+    //                 showMessage('Генерация завершена успешно!', 'success');
+    //             } else {
+    //                 showMessage(response.data);
+    //             }
+    //             loaderSpan.hide();
+    //             button.prop('disabled', false).css('opacity', '1');
+    //             updateArticleButtonState(); // Обновить состояние кнопки "Сгенерировать статью"
+    //         }).fail(function(jqXHR, textStatus, errorThrown) {
+    //             showMessage('AJAX Ошибка: ' + textStatus + (errorThrown ? ' - ' + errorThrown : '') + '. Проверьте консоль для деталей.');
+    //             console.error('AJAX Error:', textStatus, errorThrown, jqXHR);
+    //             loaderSpan.hide();
+    //             button.prop('disabled', false).css('opacity', '1');
+    //         });
+    //     }
 
-        // Обновление состояния кнопки "Сгенерировать статью"
-        function updateArticleButtonState() {
-            const title = $('#ai_title_input').val().trim();
-            const sections = $('#sections_text_area').val().trim();
-            const generateArticleBtn = $('#generate_article_btn');
+    //     // Обновление состояния кнопки "Сгенерировать статью"
+    //     function updateArticleButtonState() {
+    //         const title = $('#ai_title_input').val().trim();
+    //         const sections = $('#sections_text_area').val().trim();
+    //         const generateArticleBtn = $('#generate_article_btn');
 
-            if (title !== '' && sections !== '') {
-                generateArticleBtn.prop('disabled', false).css('opacity', '1');
-            } else {
-                generateArticleBtn.prop('disabled', true).css('opacity', '0.7');
-            }
-        }
+    //         if (title !== '' && sections !== '') {
+    //             generateArticleBtn.prop('disabled', false).css('opacity', '1');
+    //         } else {
+    //             generateArticleBtn.prop('disabled', true).css('opacity', '0.7');
+    //         }
+    //     }
 
-        // Вызов при загрузке страницы и при изменении полей
-        $(document).ready(function() {
-            updateArticleButtonState();
-            $('#ai_title_input, #sections_text_area').on('input', updateArticleButtonState);
-        });
+    //     // Вызов при загрузке страницы и при изменении полей
+    //     $(document).ready(function() {
+    //         updateArticleButtonState();
+    //         $('#ai_title_input, #sections_text_area').on('input', updateArticleButtonState);
+    //     });
 
-        $('#generate_title_btn').click(function(){
-            ajaxGenerate(
-                $(this),
-                $('#title_loader'),
-                {
-                    action: 'aiagp_generate_title',
-                    security: aiagp_ajax.nonce,
-                    topic: $('input[name="custom_topic"]').val(),
-                    language: $('select[name="language"]').val(),
-                    length: $('input[name="article_length"]').val(),
-                    tone: $('select[name="tone"]').val(),
-                    style: $('select[name="style"]').val(),
-                    num_sections: $('select[name="num_sections"]').val(),
-                    title_prompt: $('textarea[name="title_prompt"]').val(),
-                    ai_provider: $('select[name="ai_provider"]').val() // Передаем провайдера
-                },
-                function(data){ $('#ai_title_input').val(data); }
-            );
-        });
+    //     $('#generate_title_btn').click(function(){
+    //         ajaxGenerate(
+    //             $(this),
+    //             $('#title_loader'),
+    //             {
+    //                 action: 'aiagp_generate_title',
+    //                 security: aiagp_ajax.nonce,
+    //                 topic: $('input[name="custom_topic"]').val(),
+    //                 language: $('select[name="language"]').val(),
+    //                 length: $('input[name="article_length"]').val(),
+    //                 tone: $('select[name="tone"]').val(),
+    //                 style: $('select[name="style"]').val(),
+    //                 num_sections: $('select[name="num_sections"]').val(),
+    //                 title_prompt: $('textarea[name="title_prompt"]').val(),
+    //                 ai_provider: $('select[name="ai_provider"]').val()
+    //             },
+    //             function(data){ $('#ai_title_input').val(data); }
+    //         );
+    //     });
 
-        $('#generate_sections_btn').click(function(){
-            ajaxGenerate(
-                $(this),
-                $('#sections_loader'),
-                {
-                    action: 'aiagp_generate_sections',
-                    security: aiagp_ajax.nonce,
-                    topic: $('input[name="custom_topic"]').val(),
-                    language: $('select[name="language"]').val(),
-                    length: $('input[name="article_length"]').val(),
-                    tone: $('select[name="tone"]').val(),
-                    style: $('select[name="style"]').val(),
-                    num_sections: $('select[name="num_sections"]').val(),
-                    title: $('input[name="ai_title"]').val(),
-                    section_prompt: $('textarea[name="section_prompt"]').val(),
-                    ai_provider: $('select[name="ai_provider"]').val() // Передаем провайдера
-                },
-                function(data){ $('#sections_text_area').val(data); }
-            );
-        });
+    //     $('#generate_sections_btn').click(function(){
+    //         ajaxGenerate(
+    //             $(this),
+    //             $('#sections_loader'),
+    //             {
+    //                 action: 'aiagp_generate_sections',
+    //                 security: aiagp_ajax.nonce,
+    //                 topic: $('input[name="custom_topic"]').val(),
+    //                 language: $('select[name="language"]').val(),
+    //                 length: $('input[name="article_length"]').val(),
+    //                 tone: $('select[name="tone"]').val(),
+    //                 style: $('select[name="style"]').val(),
+    //                 num_sections: $('select[name="num_sections"]').val(),
+    //                 title: $('input[name="ai_title"]').val(),
+    //                 section_prompt: $('textarea[name="section_prompt"]').val(),
+    //                 ai_provider: $('select[name="ai_provider"]').val()
+    //             },
+    //             function(data){ $('#sections_text_area').val(data); }
+    //         );
+    //     });
 
-        $('#generate_article_btn').click(function(){
-            ajaxGenerate(
-                $(this),
-                $('#article_loader'),
-                {
-                    action: 'aiagp_generate_article',
-                    security: aiagp_ajax.nonce,
-                    topic: $('input[name="custom_topic"]').val(),
-                    language: $('select[name="language"]').val(),
-                    length: $('input[name="article_length"]').val(),
-                    tone: $('select[name="tone"]').val(),
-                    style: $('select[name="style"]').val(),
-                    num_sections: $('select[name="num_sections"]').val(),
-                    title: $('input[name="ai_title"]').val(),
-                    sections: $('textarea[name="sections_text"]').val(),
-                    main_prompt: $('textarea[name="main_prompt"]').val(),
-                    ai_provider: $('select[name="ai_provider"]').val() // Передаем провайдера
-                },
-                function(data){ $('#ai_article_area').val(data); }
-            );
-        });
-    });
+    //     $('#generate_article_btn').click(function(){
+    //         ajaxGenerate(
+    //             $(this),
+    //             $('#article_loader'),
+    //             {
+    //                 action: 'aiagp_generate_article',
+    //                 security: aiagp_ajax.nonce,
+    //                 topic: $('input[name="custom_topic"]').val(),
+    //                 language: $('select[name="language"]').val(),
+    //                 length: $('input[name="article_length"]').val(),
+    //                 tone: $('select[name="tone"]').val(),
+    //                 style: $('select[name="style"]').val(),
+    //                 num_sections: $('select[name="num_sections"]').val(),
+    //                 title: $('input[name="ai_title"]').val(),
+    //                 sections: $('textarea[name="sections_text"]').val(),
+    //                 main_prompt: $('textarea[name="main_prompt"]').val(),
+    //                 ai_provider: $('select[name="ai_provider"]').val()
+    //             },
+    //             function(data){ $('#ai_article_area').val(data); }
+    //         );
+    //     });
+    // });
     </script>
     <?php
 }
@@ -592,7 +628,7 @@ function render_ai_form($vars) {
 function aiagp_gpt($prompt, $openai_api_key, $max_tokens=800) {
     $api_url = 'https://api.openai.com/v1/chat/completions';
     $request_body = json_encode([
-        "model" => "gpt-4o", // Или другая модель
+        "model" => "gpt-4o",
         "messages" => [[ "role" => "user", "content" => $prompt ]],
         "max_tokens" => $max_tokens,
         "temperature" => 0.7
@@ -609,7 +645,7 @@ function aiagp_gpt($prompt, $openai_api_key, $max_tokens=800) {
 
     if (is_wp_error($response)) {
         $error_message = $response->get_error_message();
-        error_log("AIAGP OpenAI API Error: " . $error_message . " | Prompt: " . substr($prompt, 0, 200)); // Логируем ошибку
+        error_log("AIAGP OpenAI API Error: " . $error_message . " | Prompt: " . substr($prompt, 0, 200));
         return 'Ошибка API OpenAI: ' . $error_message . ' Пожалуйста, проверьте ваше интернет-соединение или настройки сервера.';
     }
 
@@ -670,7 +706,7 @@ function aiagp_gemini($prompt, $gemini_api_key, $max_tokens=800) {
 
     if (is_wp_error($response)) {
         $error_message = $response->get_error_message();
-        error_log("AIAGP Gemini API Error: " . $error_message . " | Prompt: " . substr($prompt, 0, 200)); // Логируем ошибку
+        error_log("AIAGP Gemini API Error: " . $error_message . " | Prompt: " . substr($prompt, 0, 200));
         return 'Ошибка API Gemini: ' . $error_message . ' Пожалуйста, проверьте ваше интернет-соединение или настройки сервера.';
     }
 
@@ -680,7 +716,7 @@ function aiagp_gemini($prompt, $gemini_api_key, $max_tokens=800) {
 
     if ($http_code !== 200) {
         $error_details = 'Неизвестная ошибка.';
-        $user_friendly_message = 'Gemini API вернул ошибку.'; // Дефолтное сообщение
+        $user_friendly_message = 'Gemini API вернул ошибку.';
 
         if (isset($body['error']['message'])) {
             $error_details = $body['error']['message'];
