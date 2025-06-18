@@ -22,15 +22,15 @@ jQuery(function($){
         $.post(aiagp_ajax.ajax_url, ajaxData, function(response){
             if(response.success){
                 successCallback(response.data);
-                showMessage('Генерация завершена успешно!', 'success');
+                showMessage(aiagp_ajax.messages.success_generation, 'success');
             } else {
-                showMessage(response.data);
+                showMessage(response.data); // PHP уже возвращает локализованное сообщение об ошибке
             }
             loaderSpan.hide();
             button.prop('disabled', false).css('opacity', '1');
             updateArticleButtonState(); // Обновить состояние кнопки "Сгенерировать статью"
         }).fail(function(jqXHR, textStatus, errorThrown) {
-            let errorMessage = 'AJAX Ошибка: ' + textStatus;
+            let errorMessage = aiagp_ajax.messages.ajax_error + ' ' + textStatus;
             if (errorThrown) {
                 errorMessage += ' - ' + errorThrown;
             }
@@ -45,7 +45,7 @@ jQuery(function($){
                     errorMessage += ' - ' + jqXHR.responseText;
                 }
             }
-            showMessage(errorMessage + '. Проверьте консоль для деталей.');
+            showMessage(errorMessage + '. ' + aiagp_ajax.messages.api_connection_error);
             console.error('AJAX Error:', textStatus, errorThrown, jqXHR);
             loaderSpan.hide();
             button.prop('disabled', false).css('opacity', '1');
