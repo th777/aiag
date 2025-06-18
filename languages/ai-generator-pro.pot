@@ -1,0 +1,387 @@
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: AI Article Generator PRO AJAX Extensions\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-06-18 10:07+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: \n"
+"Language: \n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Loco https://localise.biz/\n"
+"X-Loco-Version: 2.8.0; wp-6.8.1; php-8.2.27\n"
+"X-Domain: ai-generator-pro"
+
+#: ai-article-generator-pro-ajax-extensions.php:409
+msgid "1. OpenAI и Google Gemini API Keys"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:427
+msgid "2. Настройки и генерация"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:54
+msgid "AI Article Generator"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:405
+msgid "AI Article Generator PRO"
+msgstr ""
+
+#. Name of the plugin
+msgid "AI Article Generator PRO AJAX Extensions"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:55
+msgid "AI Articles"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:113
+msgid "AJAX Ошибка:"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:301
+msgid "API ключи сохранены!"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:40
+msgid ""
+"Generate a list of {{num_sections}} relevant section titles for an article "
+"about {{topic}} in {{language}}. Tone: {{tone}}, Style: {{style}}, Length: "
+"{{length}} characters, Title: {{title}}."
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:41
+msgid ""
+"Generate a list of {{num_sections}} relevant section titles for an article "
+"about {{topic}} in {{language}}. Tone: {{tone}}, Style: {{style}}, Title: "
+"{{title}}, Length: {{length}} characters. Only section titles, one per line, "
+"nothing else."
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:36
+#: ai-article-generator-pro-ajax-extensions.php:37
+msgid ""
+"Generate a unique H1 headline for an article about {{topic}} in {{language}}."
+" Tone: {{tone}}, Style: {{style}}, Length: {{length}}. Title should be "
+"catchy, relevant and no more than 80 characters."
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:475
+msgid "Google Gemini (Gemini 1.5 Pro)"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:418
+msgid "Google Gemini API Ключ:"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:617
+#, php-format
+msgid "Google Gemini API вернул ошибку с HTTP кодом %d. Подробности: %s"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:614
+#, php-format
+msgid "Google Gemini API вернул ошибку: %s"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:474
+msgid "OpenAI (GPT-4o)"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:412
+msgid "OpenAI API Ключ:"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:554
+#, php-format
+msgid "OpenAI API вернул ошибку с HTTP кодом %d. Подробности: %s"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:551
+#, php-format
+msgid "OpenAI API вернул ошибку: %s"
+msgstr ""
+
+#. Author of the plugin
+msgid "th7"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:44
+#: ai-article-generator-pro-ajax-extensions.php:45
+msgid ""
+"Write a detailed article about {{topic}} in {{language}}. Title: {{title}}. "
+"Use these sections: {{sections}}. Tone: {{tone}}, Style: {{style}}. Length: "
+"{{length}} characters."
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:448
+msgid "Английский"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:125
+#: ai-article-generator-pro-ajax-extensions.php:612
+msgid ""
+"Ваше текущее местоположение не поддерживается для использования Google "
+"Gemini API. Пожалуйста, попробуйте воспользоваться VPN или другим хостингом."
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:419
+msgid "Введите Google Gemini API ключ"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:413
+msgid "Введите OpenAI API ключ"
+msgstr ""
+
+#. Description of the plugin
+msgid ""
+"Версия 2.3 плагина с добавлением AJAX-генерации разделов и статьи и "
+"индикаторами загрузки,"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:112
+msgid "Генерация завершена успешно!"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:451
+msgid "Длина (символов):"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:322
+msgid "Для сохранения статьи как черновика необходим заголовок и контент."
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:365
+msgid "Дружелюбный"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:117
+#: ai-article-generator-pro-ajax-extensions.php:258
+msgid "Заголовок и разделы обязательны"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:485
+msgid "Заголовок статьи ({{title}}):"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:368
+msgid "Информативный"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:472
+msgid "Использовать AI:"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:478
+msgid "Количество разделов:"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:376
+msgid "Креативный"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:377
+msgid "Маркетинг"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:311
+msgid "Настройки сохранены!"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:373
+msgid "Научный"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:126
+msgid "Неизвестная ошибка API."
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:364
+msgid "Нейтральный"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:372
+msgid "Обычный блог"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:598
+#, php-format
+msgid "Ошибка API Gemini: %s. %s"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:535
+#, php-format
+msgid "Ошибка API OpenAI: %s. %s"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:115
+#: ai-article-generator-pro-ajax-extensions.php:621
+#, php-format
+msgid "Ошибка Gemini (HTTP %d): %s"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:128
+#: ai-article-generator-pro-ajax-extensions.php:629
+msgid ""
+"Ошибка Gemini: не получен ожидаемый результат. Пожалуйста, попробуйте еще "
+"раз."
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:114
+#: ai-article-generator-pro-ajax-extensions.php:558
+#, php-format
+msgid "Ошибка OpenAI (HTTP %d): %s"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:127
+#: ai-article-generator-pro-ajax-extensions.php:566
+msgid ""
+"Ошибка OpenAI: не получен ожидаемый результат. Пожалуйста, попробуйте еще "
+"раз."
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:119
+#: ai-article-generator-pro-ajax-extensions.php:333
+msgid "Ошибка при сохранении:"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:322
+msgid "Ошибка:"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:123
+msgid "Ошибка: Google Gemini API ключ не установлен."
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:122
+msgid "Ошибка: OpenAI API ключ не установлен."
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:118
+msgid ""
+"Ошибка: Для сохранения статьи как черновика необходим заголовок и контент."
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:129
+#: ai-article-generator-pro-ajax-extensions.php:535
+#: ai-article-generator-pro-ajax-extensions.php:598
+msgid "Пожалуйста, проверьте ваше интернет-соединение или настройки сервера."
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:415
+#: ai-article-generator-pro-ajax-extensions.php:421
+msgid "Показать ключ"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:124
+#: ai-article-generator-pro-ajax-extensions.php:549
+msgid ""
+"Превышен лимит использования OpenAI API. Пожалуйста, проверьте свой тарифный "
+"план и платежные данные на платформе OpenAI."
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:369
+msgid "Продажный"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:432
+msgid "Промпт для заголовка:"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:438
+msgid "Промпт для разделов:"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:435
+msgid "Промпт для статьи:"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:374
+msgid "Простой"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:375
+msgid "Разговорный"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:121
+#: ai-article-generator-pro-ajax-extensions.php:335
+msgid "Редактировать черновик"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:447
+msgid "Русский"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:487
+msgid "Сгенерировать заголовок"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:493
+msgid "Сгенерировать разделы"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:504
+msgid "Сгенерировать статью"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:507
+msgid "Сохранить как черновик"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:424
+msgid "Сохранить ключи"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:491
+msgid "Список разделов (каждая строка — заголовок, {{sections}}):"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:120
+#: ai-article-generator-pro-ajax-extensions.php:335
+msgid "Статья сохранена как черновик!"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:463
+msgid "Стиль:"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:497
+msgid "Текст статьи ({{article}}):"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:441
+msgid "Тема статьи:"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:454
+msgid "Тон:"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:116
+#: ai-article-generator-pro-ajax-extensions.php:158
+#: ai-article-generator-pro-ajax-extensions.php:198
+#: ai-article-generator-pro-ajax-extensions.php:240
+msgid "У вас нет прав для выполнения этой операции."
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:446
+msgid "Украинский"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:367
+msgid "Формальный"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:366
+msgid "Экспертный"
+msgstr ""
+
+#: ai-article-generator-pro-ajax-extensions.php:444
+msgid "Язык:"
+msgstr ""
